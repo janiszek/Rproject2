@@ -1,4 +1,5 @@
-install.packages(c("RSelenium","seleniumPipes","dplyr","gtools","stringr","xml2","rvest"))
+# run in terminal: java -jar selenium-server-standalone-3.0.1.jar -port 4444
+#install.packages(c("RSelenium","seleniumPipes","dplyr","gtools","stringr","xml2","rvest"))
 
 library(RSelenium)
 library(seleniumPipes)
@@ -14,6 +15,7 @@ remDr<- remoteDr(remoteServerAddr = "http://localhost",
                  newSession = TRUE)
 #sprawdzenie czy działa
 remDr %>% go("https://otodom.pl/sprzedaz/mieszkanie/?page=1")
+
 #uwaga - 1) nie da sie sciagnac strony >500, wiec trzeba filtrowac!!!
 #2) dodatkowo jest problem swiezo dodawanych ogloszen - 
 # wiec trzeba najpierw pobrac wszystkie linki
@@ -22,7 +24,7 @@ remDr %>% go("https://otodom.pl/sprzedaz/mieszkanie/?page=1")
 # a po 3 probach aplikacja sie wywali) - trzeba zrobić obsługę błędów
 
 wektorLinkow<-c()
-for (i in 1:10){
+for (i in 1:2){
   newUrl<-paste0("https://otodom.pl/sprzedaz/mieszkanie/?page=",i)
   #print(newUrl)
   remDr%>%go(newUrl)
@@ -43,19 +45,19 @@ for (i in 1:10){
 }
 
 #sprawdzamy czy dziala:
-newUrl<-paste0("https://otodom.pl/sprzedaz/mieszkanie/?page=",1)
-remDr%>%go(newUrl)
-elems<-remDr %>% findElements(using="tag name","h3")
+#newUrl<-paste0("https://otodom.pl/sprzedaz/mieszkanie/?page=",1)
+#remDr%>%go(newUrl)
+#elems<-remDr %>% findElements(using="tag name","h3")
 #obiekt z Selnium Pipes
-e<-findElementsFromElement(elems[[1]],using="tag name","a")
+#e<-findElementsFromElement(elems[[1]],using="tag name","a")
 
-#sprawdzamy czy sa jakies powtarzajace sie linki
+#sprawdzamy czy sa jakies powtarzajace sie linki z uzyciem dplyr
 length(wektorLinkow)
 wektorlinkowU <- wektorLinkow%>%unique()
 length(wektorlinkowU)
 
 
-zrobWiersz<-function(w,wektorLinkow,remDr){
+zrobWiersz<-function(w,wektorLinkowU,remDr){
 #szukamy szczegolow danej strony z ogloszeniem otodom.pl
   remDr%>%go(wektorlinkowU[w])
   
@@ -82,6 +84,14 @@ zrobWiersz<-function(w,wektorLinkow,remDr){
   #dodajemy cene ogloszenia
   df1<-cbind(cena,df1)
 }
+
+#sprawdzenie pobierania ze szczegolowej strony
+#remDr%>%go(wektorlinkowU[1])
+#pobieramy cene z innej klasy - tu mozemy uzyc getElementText()
+#cena<-NA
+#cenaEl<-remDr%>%findElement("class name","css-srd1q3")
+#cena<-remDr%>%findElement("class name","css-srd1q3")%>%getElementText()
+
 
 
 mieszkania<-NULL
@@ -125,7 +135,7 @@ zrobWierszRvest<-function(w,wektorLinkow,remDr){
   df1
 }
 
-#sprawdzenia drugiej metody
+#sprawdzenie drugiej metody
 mieszkania<-NULL
 for(w in 1:length(wektorlinkowU)){
   skip<-FALSE
